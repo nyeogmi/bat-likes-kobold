@@ -33,6 +33,8 @@ impl Rotation {
         return matrix2
     }
 
+    /*
+    Not used currently
     pub fn derotate_matrix<T: Copy>(&self, matrix: [T; N_MOVES]) -> [T; N_MOVES] {
         let mut matrix2 = matrix;
         for i in 0..N_MOVES {
@@ -40,6 +42,7 @@ impl Rotation {
         }
         return matrix2
     }
+    */
 }
 
 #[test]
