@@ -1,0 +1,1 @@
+pub const N_MOVES: usize = 9;
