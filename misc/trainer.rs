@@ -1,11 +1,11 @@
-#![feature(path_try_exists)]
-use std::{collections::{HashSet, HashMap, VecDeque, hash_map::Entry}, path::Path, ops::ControlFlow, default};
-use rand::{Rng, distributions::WeightedIndex, SeedableRng, prelude::SliceRandom};
+use std::{collections::{HashSet, HashMap, VecDeque, hash_map::Entry}, path::Path, ops::ControlFlow};
+use rand::{Rng, distributions::WeightedIndex, prelude::SliceRandom};
 use serde::{Serialize, Deserialize};
 
 // == base game ==
 const N_MOVES: usize = 9;
-const DESIRED_ITERATIONS: u64 = 1000000;
+const CONTEMPT_ITERATIONS: u64 = 10000; // Iterations for contempt to drop to a very very low number
+const DESIRED_ITERATIONS: u64 = 40000; // // NOTE: I've been using 40000 lately, but I drop it to 0 to force a strategy export
 const SAVE_EVERY: u64 = 1000;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -228,8 +228,9 @@ impl InfosetNode {
         }
 
         if contempt > 0.0 {
+            let n_legal_moves = self.legal.iter().filter(|i| **i).count();
             for i in 0..N_MOVES {
-                if self.legal[i] { strategy[i] += contempt }
+                if self.legal[i] { strategy[i] = strategy[i] * (1.0 - contempt) + contempt / n_legal_moves as f32 }
             }
             self._normalize(&mut strategy);
         }
@@ -296,30 +297,40 @@ impl CFR {
         }
     }
 
-    fn train(&mut self) -> f32 {
+    fn train(&mut self, contempt: f32) -> f32 {
         let initial = self.initial.clone();
         let mut util = 0.0;
         for (init_state, init_infoset) in initial.iter() {
-            util += self._train(*init_state, *init_infoset, 0, 1.0, 1.0);
+            util += self._train(*init_state, *init_infoset, contempt, 0, 1.0, 1.0);
         }
         util /= initial.len() as f32;
         self.trained_iterations += 1;
         return util;
     }
 
-    fn _train(&mut self, state: State, infoset: Infoset, turn: usize, p0: f32, p1: f32) -> f32 {
+    fn _train(&mut self, state: State, infoset: Infoset, contempt: f32, turn: usize, p0: f32, p1: f32) -> f32 {
         let player = turn % 2;
         let node = self.states[state.0 as usize].expect("missing state");
 
         if let Some((sc_p0, sc_p1)) = node.score {
-            let mut utility = (sc_p0 - sc_p1) as f32;
+            let mut sc_p0_adjusted = sc_p0 as f32;
+            let mut sc_p1_adjusted = sc_p1 as f32;
+
+            // strongly prefer to win in fewer turns
+            // this probably isn't good for its overall play, but _is_ more humanlike
+            let adj_turn = (turn / 2) as f32;
+            let adj_turn_multiplier = (4.0 - adj_turn).max(0.0)/4.0;
+            if sc_p0_adjusted > 0.0 { sc_p0_adjusted += contempt * adj_turn_multiplier }
+            if sc_p1_adjusted > 0.0 { sc_p1_adjusted += contempt * adj_turn_multiplier }
+
+            let mut utility = (sc_p0_adjusted - sc_p1_adjusted) as f32;
             if player == 1 { utility = -utility }
             return utility
         }
 
         let strategy = 
             self.with_infoset_node(infoset, player == 0, &node, |n| 
-                n.get_strategy(if player == 0 { p0 } else { p1 }, 0.04)
+                n.get_strategy(if player == 0 { p0 } else { p1 }, contempt)
             );
 
         let mut util = [0.0; N_MOVES];
@@ -328,9 +339,9 @@ impl CFR {
         for m in 0..N_MOVES {
             if let Some(successor) = node.successors[m] {
                 util[m] = if player == 0 {
-                    -self._train(successor, infoset.cons(Move(m)), turn + 1, p0 * strategy[m], p1)
+                    -self._train(successor, infoset.cons(Move(m)), contempt, turn + 1, p0 * strategy[m], p1)
                 } else {
-                    -self._train(successor, infoset.cons(Move(m)), turn + 1, p0, p1 * strategy[m])
+                    -self._train(successor, infoset.cons(Move(m)), contempt, turn + 1, p0, p1 * strategy[m])
                 };
                 node_util += strategy[m] * util[m];
             }
@@ -385,7 +396,8 @@ fn main() {
 
     while cfr.trained_iterations < DESIRED_ITERATIONS {
         println!("training: iteration {}", cfr.trained_iterations);
-        let util = cfr.train();
+        let contempt = (0.5 * (1.0 - cfr.trained_iterations as f32 / CONTEMPT_ITERATIONS as f32)).max(0.01);
+        let util = cfr.train(contempt);
         println!("average utility: {}", util);
 
         if cfr.trained_iterations % SAVE_EVERY == 0 {

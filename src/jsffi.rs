@@ -18,6 +18,59 @@ impl Board {
         )
     }
 
+    fn calculate_advice(&self) -> [f32; 9] {
+        if self.turn == 0 {
+            // turn 0 advice
+            // average out advice across all rotations
+            let base_advice = STRATEGY.with(|s| s.distribution(self));
+            let advices = [
+                base_advice,
+                Rotation::Left.rotate_matrix(base_advice),
+                Rotation::Double.rotate_matrix(base_advice),
+                Rotation::Right.rotate_matrix(base_advice)
+            ];
+
+            let mut avg_advice = [0.0; N_MOVES];
+            for i in 0..4 {
+                for m in 0..N_MOVES {
+                    avg_advice[m] += advices[i][m]/4.0;
+                }
+            }
+
+            avg_advice
+        } else {
+            // hack to check for moves that accomplish current player's wincon
+            // if so, that move must take place
+            let mut immediate_winning_moves = vec![];
+            for m in 0..N_MOVES as u8 {
+                let mut b2 = self.clone();
+                b2.js_play(m);
+                if let Some((_, p0, p1)) = b2.score() {
+                    let my_score = match self.next_to_move() {
+                        CellValue::P0 => p0,
+                        CellValue::P1 => p1,
+                        _ => 0,
+                    };
+                    if my_score > 0 { 
+                        immediate_winning_moves.push(m);
+                    }
+                }
+            }
+
+            let n_winning_moves = immediate_winning_moves.len();
+            if n_winning_moves > 0 {
+                let mut strat = [0.0; N_MOVES];
+                for i in immediate_winning_moves {
+                    strat[i as usize] = 1.0/n_winning_moves as f32;
+                }
+                return strat
+            }
+
+
+            self.rotation.rotate_matrix(STRATEGY.with(|s| s.distribution(self)))
+        }
+    }
+
     pub fn js_view(&self) -> View {
         let board = self.rotation.rotate_matrix(self.cells.map(|c| 
             match c {
@@ -33,33 +86,13 @@ impl Board {
             (255, 0, 0)
         };
 
-        let advice = if outcome != 255 {  
-            // if game is over
-            [0.0; N_MOVES]
-        } else {
-            if self.turn == 0 {
-                // turn 0 advice
-                // average out advice across all rotations
-                let base_advice = STRATEGY.with(|s| s.distribution(self));
-                let advices = [
-                    base_advice,
-                    Rotation::Left.rotate_matrix(base_advice),
-                    Rotation::Double.rotate_matrix(base_advice),
-                    Rotation::Right.rotate_matrix(base_advice)
-                ];
-
-                let mut avg_advice = [0.0; N_MOVES];
-                for i in 0..4 {
-                    for m in 0..N_MOVES {
-                        avg_advice[m] += advices[i][m]/4.0;
-                    }
-                }
-
-                avg_advice
+        let advice = 
+            if outcome != 255 {  
+                // if game is over
+                [0.0; N_MOVES]
             } else {
-                self.rotation.rotate_matrix(STRATEGY.with(|s| s.distribution(self)))
-            }
-        };
+                self.calculate_advice()
+            };
 
         let wants_p0 = match self.p0_wants {
             Outcome::Tie => 2,
