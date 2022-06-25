@@ -1,0 +1,121 @@
+
+/* dynamic-ish sizing: this is for 640 x 480 and would be different at different sizes */
+#container { width: 640px; height: 480px; }
+body { font-size: 16px; line-height: 20px; }
+h1 { font-size: 40px; line-height: 48px; }
+p, ul { margin-bottom: 24px; }
+.button { border-radius: 2px; margin-right: 8px; }
+#title, #notice1, #notice2, #notice3 { width: 100%;}
+#game { width: 100%; height: 100% }
+
+/* container layout */
+#container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+#title, #notice1, #notice2, #notice3 {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+#title { text-align: center; }
+
+/* in-game layout */
+#game {
+    line-height: normal;
+}
+
+#gameArea {
+    left: 140px;
+    top: 62px;
+    width: 360px;
+    height: 360px;
+    position: absolute;
+
+    font-size: 90px;
+    line-height: 90px;
+    text-align: center;
+}
+
+#gameArea td {
+    vertical-align: middle;
+}
+
+#score {
+    left: 140px;
+    top: 2px;
+    width: 360px;
+    height: 60px;
+    position: absolute;
+    font-size: 40px;
+    text-align: center
+}
+
+#wants {
+    left: 140px;
+    top: 426px;
+    width: 360px;
+    height: 34px;
+    position: absolute;
+    font-size: 24px;
+    text-align: center
+}
+
+#score td { width: 90px;}
+#wants td { width: 180px;}
+
+#gutter {
+    position: absolute;
+    left: 0px;
+    top: 62px;
+    width: 140px;
+    text-align: right;
+}
+#gutter2 {
+    position: absolute;
+    left: 500px;
+    top: 62px;
+    width: 140px;
+    text-align: left;
+}
+
+#gutter2 #peek {
+    position: absolute;
+    top: 360px;
+}
+
+/* petty formatting */
+
+html {
+    background-color: #ffffff;
+}
+
+body {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.button {
+    display: inline-block;
+
+    background-color: #f0fff9;
+    font-weight: bold;
+}
+
+.button:hover { background-color: #80ffb5; }
+.button.disabled {
+    background-color: #f4f4f4;
+    color: #d0d0d0;
+}
+.verdict-won { background-color: #80ffb5; }
+
+/* mechanical */
+.inactive {
+    display: none;
+}

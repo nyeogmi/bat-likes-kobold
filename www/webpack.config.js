@@ -9,6 +9,6 @@ module.exports = {
   },
   mode: "development",
   plugins: [
-    new CopyWebpackPlugin(['index.html'])
+    new CopyWebpackPlugin(['index.html', 'bootstrap.js', 'index.js', 'rsmodel.js', 'reset.css', 'gamestyle.css']),
   ],
 };

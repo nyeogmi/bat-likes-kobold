@@ -2,7 +2,7 @@ use std::{collections::HashMap};
 
 use crate::{consts::N_MOVES, game::{Move, Board}};
 
-const STRATEGY_DATA: &[u8; 311497] = include_bytes!("strategy.dat");
+const STRATEGY_DATA: &[u8; 310335] = include_bytes!("strategy.dat");
 const VAL_EXPANSION: [f32; 16] = [0.0, 0.01, 0.1, 0.2, 0.3, 0.33333, 0.4, 0.5, 0.6, 0.666666, 0.7, 0.8, 0.9, 0.98, 0.99, 1.0];
 
 pub struct Strategy {

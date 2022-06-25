@@ -3,10 +3,15 @@ import * as wasm from "tictac2player";
 wasm.init();
 
 let board = null;
+let temporary = null;
 
 let start = function() {
     if (board != null) { board.free() }
     board = wasm.Board.js_start_random()
+    temporary = {
+        hinted: false,
+        peeked: false,
+    }
 }
 
 let viewBoard = function() {
@@ -32,28 +37,41 @@ let viewBoard = function() {
                 outcome == 1 ? 1 :
                 outcome == 2 ? null :
                 "wtf",
-            util: {
-                p0: view.util_p0,
-                p1: view.util_p1
-            }
+            util: [view.util_p0, view.util_p1]
         },
-        wants: {
-            p0: view.wants_p0,
-            p1: view.wants_p1,
-        },
+        wants: [view.wants_p0, view.wants_p1],
         advice: advice,
-        cells: cells
+        cells: cells,
+        hinted: temporary.hinted,
+        peeked: temporary.peeked,
     };
     view.free()
     return view_data;
 }
 
-let play = function(cell) {
+let hint = function() {
+    temporary.hinted = true;
+}
+
+let peek = function() {
+    temporary.peeked = true;
+}
+
+let play = function(cell, progressedCb) {
+    let old_view = board.js_view();
     board.js_play(cell)
+    let new_view = board.js_view();
+    let progressed = old_view.player_turn != new_view.player_turn;
+    if (progressed) {
+        temporary.hinted = false
+        progressedCb(viewBoard())
+    }
 }
 
 export {
     start,
     viewBoard,
+    hint,
+    peek,
     play,
 };
