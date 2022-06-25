@@ -1,6 +1,6 @@
 Hey, this repo's a Lot!
 
-trainer.rs is a one-file Rust program I wrote earlier just to figure out the performance-intense parts of this. (It replaces a way crappier Python program that does the same.)
+If you wanna know how the ai works, check out misc/trainer.rs. There's basically no comments -- I wrote it really fast just to figure out the performance-intense parts of this. (It replaces a way crappier Python program that does the same.)
 
 Ultimately, this AI just uses the non-Monte Carlo version of CFR. (See the paper [here](http://modelai.gettysburg.edu/2013/cfr/cfr.pdf).) The game tree is reduced slightly to have fewer symmetries. There's a pretty cute compression algorithm involved in reducing the size of the strategy file it ultimately generates -- you might have some fun piecing that out!
 
