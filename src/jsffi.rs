@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use rand::{thread_rng, prelude::SliceRandom};
 use wasm_bindgen::prelude::*;
 
@@ -19,7 +21,9 @@ impl Board {
     }
 
     fn calculate_advice(&self) -> [f32; 9] {
-        if self.turn == 0 {
+        // hack because for some reason it learned an asymmetric strategy for some middle cell cases and I CBA
+        // to figure out why
+        if self.turn == 0  || self.turn == 1 && self.cells[4] != CellValue::Empty { 
             // turn 0 advice
             // average out advice across all rotations
             let base_advice = STRATEGY.with(|s| s.distribution(self));
